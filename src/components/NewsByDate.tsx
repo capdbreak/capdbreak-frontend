@@ -8,6 +8,7 @@ interface NewsByDateProps {
 
 const NewsByDate = ({ symbol, onSelect, sortDescending = false }: NewsByDateProps) => {
   const [dates, setDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>(''); // ✅ 선택된 날짜 상태
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +33,7 @@ const NewsByDate = ({ symbol, onSelect, sortDescending = false }: NewsByDateProp
         setDates(sorted);
 
         if (sorted.length > 0) {
+          setSelectedDate(sorted[0]); // ✅ 초기 선택값 설정
           onSelect(sorted[0]);
         }
 
@@ -44,6 +46,11 @@ const NewsByDate = ({ symbol, onSelect, sortDescending = false }: NewsByDateProp
       });
   }, [symbol]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedDate(e.target.value); // ✅ 상태 변경
+    onSelect(e.target.value);
+  };
+
   return (
     <div className="mb-4">
       <h2 className="text-xl font-bold mb-2 text-white">날짜 선택</h2>
@@ -54,8 +61,8 @@ const NewsByDate = ({ symbol, onSelect, sortDescending = false }: NewsByDateProp
       {!loading && !error && (
         <select
           className="px-4 py-2 border rounded w-full text-black font-semibold"
-          onChange={(e) => onSelect(e.target.value)}
-          value={dates.includes(symbol) ? symbol : dates[0] ?? ''}
+          onChange={handleChange}
+          value={selectedDate}
         >
           {dates.map((date) => (
             <option key={date} value={date}>
