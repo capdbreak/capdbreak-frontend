@@ -8,7 +8,7 @@ interface NewsByDateProps {
 
 const NewsByDate = ({ symbol, onSelect, sortDescending = false }: NewsByDateProps) => {
   const [dates, setDates] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(''); // ✅ 선택된 날짜 상태
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +33,7 @@ const NewsByDate = ({ symbol, onSelect, sortDescending = false }: NewsByDateProp
         setDates(sorted);
 
         if (sorted.length > 0) {
-          setSelectedDate(sorted[0]); // ✅ 초기 선택값 설정
+          setSelectedDate(sorted[0]);
           onSelect(sorted[0]);
         }
 
@@ -47,7 +47,7 @@ const NewsByDate = ({ symbol, onSelect, sortDescending = false }: NewsByDateProp
   }, [symbol]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedDate(e.target.value); // ✅ 상태 변경
+    setSelectedDate(e.target.value);
     onSelect(e.target.value);
   };
 

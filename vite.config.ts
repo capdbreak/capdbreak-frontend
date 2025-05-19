@@ -6,9 +6,21 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/tickers': 'http://fastapi-app:8080',
-      '/news': 'http://fastapi-app:8080',
-      '/auth': 'http://fastapi-app:8080',
-    }
-  }
+      '/tickers': {
+        target: 'http://fastapi-app:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/tickers/, '/tickers'),
+      },
+      '/news': {
+        target: 'http://fastapi-app:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/news/, '/news'),
+      },
+      '/auth': {
+        target: 'http://fastapi-app:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/auth/, '/auth'),
+      },
+    },
+  },
 });
