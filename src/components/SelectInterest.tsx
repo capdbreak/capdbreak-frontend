@@ -56,7 +56,7 @@ function SelectInterest() {
     if (!token) return alert("토큰이 없습니다. 다시 로그인 해주세요.")
 
     try {
-      await axios.post("https://capdbreak-finance-flow.uk/auth/register-complete", {
+      await axios.post("https://api.capdbreak-finance-flow.uk/auth/register-complete", {
         token,
         selectedIndices,
         selectedStocks,
