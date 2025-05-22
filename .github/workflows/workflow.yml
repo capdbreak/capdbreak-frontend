@@ -26,10 +26,11 @@ jobs:
             echo "Starting deployment process..."
             
             # 프로젝트 디렉토리로 이동 (프로젝트 루트 디렉토리 가정)
-            cd ~/
+            cd ~/frontend
             echo "Pulling latest changes from repository..."
             git pull origin main
-            
+
+            cd ~/
             # Docker Compose로 특정 서비스만 빌드 및 재시작
             echo "Building vite-frontend service..."
             docker compose build vite-frontend
