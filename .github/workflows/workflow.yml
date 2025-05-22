@@ -36,7 +36,7 @@ jobs:
             docker compose build vite-frontend
             
             echo "Restarting only vite-frontend service..."
-            docker compose up -d --no-recreate vite-frontend
+            docker compose up -d --build vite-frontend
             
             echo "Deployment completed successfully."
             echo "Current status of containers:"
