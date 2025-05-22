@@ -6,9 +6,9 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/tickers': 'http://fastapi-app:8080',
-      '/news': 'http://fastapi-app:8080',
-      '/auth': 'http://fastapi-app:8080',
+      '/tickers': 'https://api.capdbreak-finance-flow.uk',
+      '/news': 'https://api.capdbreak-finance-flow.uk',
+      '/auth': 'https://api.capdbreak-finance-flow.uk',
     }
   }
 });

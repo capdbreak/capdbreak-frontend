@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 
+// badgeColor function for sentiment indicators
 const badgeColor = (value: string | null) => {
   switch (value) {
     case '긍정': return 'bg-green-100 text-green-800';
@@ -11,80 +12,71 @@ const badgeColor = (value: string | null) => {
   }
 };
 
-const NewsViewer = ({ news }: { news: any[] }) => {
-  const [index, setIndex] = useState(0);
+// News item interface
+interface NewsItem {
+  title: string;
+  real_url: string;
+  valence: string | null;
+  arousal: string | null;
+  importance: string | null;
+  summary: string | null;
+}
+
+const NewsViewer = ({ news }: { news: NewsItem[] }) => {
   if (!news || news.length === 0) return null;
 
-  const current = news[index];
-
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-5xl font-bold text-gray-900">{current.title}</h2>
-        <a
-          href={current.real_url}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm text-blue-600 hover:underline"
-        >
-          뉴스 원문 사이트 이동
-        </a>
-      </div>
+    <div className="space-y-6">
+      {news.map((item, idx) => (
+        <div key={idx} className="bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* Summary first - highlighted with a gradient background */}
+          <div className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500">
+            <div className="text-gray-800 font-medium leading-relaxed whitespace-pre-wrap">
+              {item.summary || '요약이 없습니다.'}
+            </div>
+          </div>
 
-      <div className="flex gap-2 text-sm">
-        <span className={`px-2 py-1 rounded ${badgeColor(current.valence)}`}>
-          Balance: {current.valence || 'N/A'}
-        </span>
-        <span className={`px-2 py-1 rounded ${badgeColor(current.arousal)}`}>
-          Arousal: {current.arousal || 'N/A'}
-        </span>
-        <span className={`px-2 py-1 rounded ${badgeColor(current.importance)}`}>
-          Importance: {current.importance || 'N/A'}
-        </span>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold mb-2 text-gray-700">본문</h3>
-        <div
-          className="max-h-600 overflow-y-auto text-gray-800 whitespace-pre-wrap p-3 border rounded bg-gray-50"
-          style={{ fontSize: '18px' }}
-        >
-          {current.article || '본문이 없습니다.'}
+          {/* Title and metadata in a cleaner layout */}
+          <div className="p-5 flex flex-col space-y-3">
+            <h2 className="text-xl font-bold text-gray-900">{item.title}</h2>
+            
+            {/* Sentiment badges in a sleek horizontal layout */}
+            <div className="flex flex-wrap gap-2 text-sm">
+              {item.valence && (
+                <span className={`px-3 py-1 rounded-full font-medium ${badgeColor(item.valence)}`}>
+                  Balance: {item.valence}
+                </span>
+              )}
+              {item.arousal && (
+                <span className={`px-3 py-1 rounded-full font-medium ${badgeColor(item.arousal)}`}>
+                  Arousal: {item.arousal}
+                </span>
+              )}
+              {item.importance && (
+                <span className={`px-3 py-1 rounded-full font-medium ${badgeColor(item.importance)}`}>
+                  Importance: {item.importance}
+                </span>
+              )}
+            </div>
+            
+            {/* Source link as a button */}
+            <div className="mt-2">
+              <a
+                href={item.real_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+              >
+                <span className="mr-1">뉴스 원문 확인</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                  <path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold mb-2 text-gray-700">요약</h3>
-        <div
-          className="bg-yellow-50 border border-yellow-200 rounded p-3 text-gray-800 whitespace-pre-wrap"
-          style={{ fontSize: '18px' }}
-        >
-          {current.summary || '요약이 없습니다.'}
-        </div>
-      </div>
-
-
-      {news.length > 1 && (
-        <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={() => setIndex((prev) => Math.max(prev - 1, 0))}
-            disabled={index === 0}
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-          >
-            ⬅ 이전
-          </button>
-          <span className="text-sm text-gray-500">
-            {index + 1} / {news.length}
-          </span>
-          <button
-            onClick={() => setIndex((prev) => Math.min(prev + 1, news.length - 1))}
-            disabled={index === news.length - 1}
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-          >
-            다음 ➡
-          </button>
-        </div>
-      )}
+      ))}
     </div>
   );
 };
