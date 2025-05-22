@@ -23,10 +23,21 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} << 'EOF'
             set -e
-            cd ~/frontend
-            git pull
-            cd ..
-            docker-compose build vite-frontend
-            docker-compose down
-            docker-compose up -d
+            echo "Starting deployment process..."
+            
+            # 프로젝트 디렉토리로 이동 (프로젝트 루트 디렉토리 가정)
+            cd ~/
+            echo "Pulling latest changes from repository..."
+            git pull origin main
+            
+            # Docker Compose로 특정 서비스만 빌드 및 재시작
+            echo "Building vite-frontend service..."
+            docker compose build vite-frontend
+            
+            echo "Restarting only vite-frontend service..."
+            docker compose up -d --no-recreate vite-frontend
+            
+            echo "Deployment completed successfully."
+            echo "Current status of containers:"
+            docker compose ps
           EOF
