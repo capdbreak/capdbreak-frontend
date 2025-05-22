@@ -49,36 +49,55 @@ const MainPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
-      <div className="flex items-center justify-between bg-gray-900 px-4 py-2 overflow-x-auto">
-        <div className="flex space-x-1">
-          {tickers.map((item) => (
-            <img
-              key={item.ticker}
-              src={`/logos/${item.ticker}.png`}
-              alt={item.name}
-              title={`${item.name} (${item.ticker})`}
-              className={`cursor-pointer border rounded transition-transform hover:scale-105 h-44 w-44 object-contain bg-transparent ${
-                selectedSymbol === item.ticker ? 'ring-4 ring-blue-500' : 'border-gray-300'
-              }`}
-              onClick={() => {
-                setSelectedSymbol(item.ticker);
-                setSelectedDate(null);
-                setNews([]);
-                setCurrentIndex(0);
-              }}
-            />
-          ))}
-        </div>
-        <button
+<div className="sticky top-0 z-10 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 px-6 py-3">
+  <div className="flex items-center justify-between">
+    <div className="flex items-center space-x-4 overflow-x-auto scrollbar-hide pb-2">
+      {tickers.map((item) => (
+        <div 
+          key={item.ticker} 
+          className={`flex flex-col items-center cursor-pointer transition-all duration-200 px-3 py-2 rounded-lg ${
+            selectedSymbol === item.ticker 
+              ? 'bg-blue-600/20 shadow-md shadow-blue-500/20' 
+              : 'hover:bg-gray-800'
+          }`}
           onClick={() => {
-            localStorage.removeItem('token');
-            window.location.href = '/';
+            setSelectedSymbol(item.ticker);
+            setSelectedDate(null);
+            setNews([]);
+            setCurrentIndex(0);
           }}
-          className="bg-red-500 text-white px-8 py-8 rounded hover:bg-red-600 font-semibold"
         >
-          로그아웃
-        </button>
-      </div>
+          <img
+            src={`/logos/${item.ticker}.png`}
+            alt={item.name}
+            className={`h-10 w-10 object-contain mb-1 ${
+              selectedSymbol === item.ticker ? 'brightness-110' : 'opacity-80'
+            }`}
+          />
+          <span className={`text-xs font-medium ${
+            selectedSymbol === item.ticker ? 'text-blue-400' : 'text-gray-400'
+          }`}>
+            {item.ticker}
+          </span>
+        </div>
+      ))}
+    </div>
+    
+    <button
+      onClick={() => {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      }}
+      className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-red-800 transition-all text-sm font-medium flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      </svg>
+      로그아웃
+    </button>
+  </div>
+</div>
+
 
       {selectedSymbol && selectedTicker && (
         <div className="flex-1 p-6">
