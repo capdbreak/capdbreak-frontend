@@ -44,7 +44,7 @@ const NewsViewer = ({ news }: { news: NewsItem[] }) => {
             <div className="flex flex-wrap gap-2 text-sm">
               {item.valence && (
                 <span className={`px-3 py-1 rounded-full font-medium ${badgeColor(item.valence)}`}>
-                  Balance: {item.valence}
+                  Valence: {item.valence}
                 </span>
               )}
               {item.arousal && (
