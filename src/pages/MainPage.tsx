@@ -42,6 +42,46 @@ const MainPage = () => {
   const [emailOptIn, setEmailOptIn] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // 사용자 정보 가져오기 - 이 부분이 빠져있었습니다
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          // 임시로 사용자 정보 설정 (백엔드 API가 없는 경우)
+          setUser({
+            email: 'user@example.com',
+            email_opt_in: false
+          });
+          setEmailOptIn(false);
+          
+          // 실제 API가 있다면 아래 코드를 사용하세요
+          /*
+          const response = await fetch('https://api.capdbreak-finance-flow.uk/user/profile', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+            setEmailOptIn(userData.email_opt_in);
+          }
+          */
+        } catch (error) {
+          console.error('Failed to fetch user info:', error);
+          // 에러가 발생해도 기본값으로 설정
+          setUser({
+            email: 'user@example.com',
+            email_opt_in: false
+          });
+          setEmailOptIn(false);
+        }
+      }
+    };
+    
+    fetchUserInfo();
+  }, []);
 
   useEffect(() => {
     if (selectedSymbol && selectedDate) {
@@ -158,54 +198,55 @@ const MainPage = () => {
           <div className="mt-4 bg-gray-800 rounded-lg p-4 border border-gray-700">
             <h3 className="text-lg font-semibold mb-4 text-white">설정</h3>
             
-            {user && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-white">이메일 주소</h4>
-                    <p className="text-sm text-gray-400">{user.email}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-white">뉴스레터 구독</h4>
-                    <p className="text-sm text-gray-400">
-                      중요한 뉴스와 업데이트를 이메일로 받아보세요
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <button
-                      onClick={handleEmailOptInToggle}
-                      disabled={isUpdating}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
-                        emailOptIn ? 'bg-blue-600' : 'bg-gray-600'
-                      } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          emailOptIn ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                    {isUpdating && (
-                      <div className="ml-2">
-                        <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="pt-2 border-t border-gray-700">
-                  <p className="text-xs text-gray-500">
-                    {emailOptIn ? '뉴스레터가 활성화되었습니다.' : '뉴스레터가 비활성화되었습니다.'}
+            {/* user가 null이어도 설정 패널이 보이도록 수정 */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-white">이메일 주소</h4>
+                  <p className="text-sm text-gray-400">
+                    {user ? user.email : '로딩 중...'}
                   </p>
                 </div>
               </div>
-            )}
+              
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-white">뉴스레터 구독</h4>
+                  <p className="text-sm text-gray-400">
+                    중요한 뉴스와 업데이트를 이메일로 받아보세요
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={handleEmailOptInToggle}
+                    disabled={isUpdating || !user}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                      emailOptIn ? 'bg-blue-600' : 'bg-gray-600'
+                    } ${isUpdating || !user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        emailOptIn ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  {isUpdating && (
+                    <div className="ml-2">
+                      <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="pt-2 border-t border-gray-700">
+                <p className="text-xs text-gray-500">
+                  {emailOptIn ? '뉴스레터가 활성화되었습니다.' : '뉴스레터가 비활성화되었습니다.'}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>
