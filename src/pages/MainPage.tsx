@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import NewsByDate from '../components/NewsByDate';
 import NewsViewer from '../components/NewsViewer';
 import TradingViewWidget from '../components/TradingViewWidget';
@@ -9,8 +11,11 @@ interface TickerOption {
 }
 
 interface User {
+  id: string;
   email: string;
+  name: string;
   email_opt_in: boolean;
+  provider: string;
 }
 
 const tickers: TickerOption[] = [
@@ -41,72 +46,121 @@ const MainPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [emailOptIn, setEmailOptIn] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
-  // 사용자 정보 가져오기 - 이 부분이 빠져있었습니다
+  // 토큰 만료 시 로그아웃 처리 함수
+  const handleTokenExpired = () => {
+    const [token, setToken] = useState<string | null>(null);
+    const [searchParams] = useSearchParams();
+    if (searchParams.get('token')) {
+      setToken(searchParams.get('token'));
+      localStorage.setItem('token', searchParams.get('token')!);
+    } else {
+      setToken(localStorage.getItem('token'));
+      localStorage.removeItem('token');
+      alert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+      window.location.href = '/';
+    }
+  };
+
+  // 사용자 정보를 가져오는 useEffect
   useEffect(() => {
     const fetchUserInfo = async () => {
       const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          // 임시로 사용자 정보 설정 (백엔드 API가 없는 경우)
+      if (!token) {          
+        handleTokenExpired();
+        return;
+      }
+
+      try {
+        const response = await fetch('https://api.capdbreak-finance-flow.uk/users/profile', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          setEmailOptIn(userData.email_opt_in);
+        } else if (response.status === 401) {
+          // 토큰이 만료되었거나 유효하지 않음
+          handleTokenExpired();
+          return;
+        } else {
+          console.error('Failed to fetch user info');
+          // API 호출은 실패했지만 기본값으로 설정
           setUser({
+            id: 'unknown',
             email: 'user@example.com',
-            email_opt_in: false
-          });
-          setEmailOptIn(false);
-          
-          // 실제 API가 있다면 아래 코드를 사용하세요
-          /*
-          const response = await fetch('https://api.capdbreak-finance-flow.uk/user/profile', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
-            setEmailOptIn(userData.email_opt_in);
-          }
-          */
-        } catch (error) {
-          console.error('Failed to fetch user info:', error);
-          // 에러가 발생해도 기본값으로 설정
-          setUser({
-            email: 'user@example.com',
-            email_opt_in: false
+            name: 'Unknown User',
+            email_opt_in: false,
+            provider: 'unknown'
           });
           setEmailOptIn(false);
         }
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+        // 네트워크 에러 등의 경우 기본값 설정
+        setUser({
+          id: 'unknown',
+          email: 'user@example.com', 
+          name: 'Unknown User',
+          email_opt_in: false,
+          provider: 'unknown'
+        });
+        setEmailOptIn(false);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
-    
+
     fetchUserInfo();
   }, []);
 
   useEffect(() => {
     if (selectedSymbol && selectedDate) {
-      fetch(`/news/${selectedSymbol}/${selectedDate}`)
-        .then(res => res.json())
+      const token = localStorage.getItem('token');
+      fetch(`/news/${selectedSymbol}/${selectedDate}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      })
+        .then(res => {
+          if (res.status === 401) {
+            handleTokenExpired();
+            return;
+          }
+          return res.json();
+        })
         .then(data => {
-          setNews(data);
-          setCurrentIndex(0);
+          if (data) {
+            setNews(data);
+            setCurrentIndex(0);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching news:', error);
         });
     }
   }, [selectedSymbol, selectedDate]);
 
   const handleEmailOptInToggle = async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      handleTokenExpired();
+      return;
+    }
 
     setIsUpdating(true);
     try {
       const response = await fetch('https://api.capdbreak-finance-flow.uk/settings/newsletter', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_token: token,
           email_opt_in: !emailOptIn,
         }),
       });
@@ -115,11 +169,15 @@ const MainPage = () => {
         const result = await response.json();
         setEmailOptIn(result.email_opt_in);
         setUser(prev => prev ? { ...prev, email_opt_in: result.email_opt_in } : null);
+      } else if (response.status === 401) {
+        handleTokenExpired();
       } else {
         console.error('Failed to update email preference');
+        alert('뉴스레터 설정 업데이트에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error updating email preference:', error);
+      alert('뉴스레터 설정 업데이트 중 오류가 발생했습니다.');
     } finally {
       setIsUpdating(false);
     }
@@ -165,6 +223,13 @@ const MainPage = () => {
           </div>
           
           <div className="flex items-center space-x-3">
+            {/* User Name Display */}
+            {user && !isLoadingUser && (
+              <div className="text-sm text-gray-300 hidden md:block">
+                안녕하세요, {user.name}님
+              </div>
+            )}
+            
             {/* Settings Button */}
             <button
               onClick={() => setShowSettings(!showSettings)}
@@ -198,14 +263,18 @@ const MainPage = () => {
           <div className="mt-4 bg-gray-800 rounded-lg p-4 border border-gray-700">
             <h3 className="text-lg font-semibold mb-4 text-white">설정</h3>
             
-            {/* user가 null이어도 설정 패널이 보이도록 수정 */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-white">이메일 주소</h4>
+                  <h4 className="text-sm font-medium text-white">사용자 정보</h4>
                   <p className="text-sm text-gray-400">
-                    {user ? user.email : '로딩 중...'}
+                    {isLoadingUser ? '로딩 중...' : user ? `${user.name} (${user.email})` : '사용자 정보를 불러올 수 없습니다'}
                   </p>
+                  {user && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {user.provider === 'google' ? 'Google 계정' : '기타 계정'}으로 로그인됨
+                    </p>
+                  )}
                 </div>
               </div>
               
@@ -219,10 +288,10 @@ const MainPage = () => {
                 <div className="flex items-center">
                   <button
                     onClick={handleEmailOptInToggle}
-                    disabled={isUpdating || !user}
+                    disabled={isUpdating || isLoadingUser || !user}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
                       emailOptIn ? 'bg-blue-600' : 'bg-gray-600'
-                    } ${isUpdating || !user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    } ${isUpdating || isLoadingUser || !user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -230,7 +299,7 @@ const MainPage = () => {
                       }`}
                     />
                   </button>
-                  {isUpdating && (
+                  {(isUpdating || isLoadingUser) && (
                     <div className="ml-2">
                       <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
