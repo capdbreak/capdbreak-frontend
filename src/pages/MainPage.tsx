@@ -38,6 +38,8 @@ const getTradingViewSymbol = (ticker: string) => {
 };
 
 const MainPage = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [selectedSymbol, setSelectedSymbol] = useState<string>('MSFT');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [news, setNews] = useState<any[]>([]);
@@ -50,29 +52,35 @@ const MainPage = () => {
 
   // 토큰 만료 시 로그아웃 처리 함수
   const handleTokenExpired = () => {
-    const [token, setToken] = useState<string | null>(null);
-    const [searchParams] = useSearchParams();
-    if (searchParams.get('token')) {
-      setToken(searchParams.get('token'));
-      localStorage.setItem('token', searchParams.get('token')!);
-    } else {
-      setToken(localStorage.getItem('token'));
-      localStorage.removeItem('token');
-      alert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
-      window.location.href = '/';
-    }
+    localStorage.removeItem('token');
+    alert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+    window.location.href = '/';
   };
+
+  // URL 파라미터에서 토큰을 확인하고 저장하는 useEffect
+  useEffect(() => {
+    const tokenFromUrl = searchParams.get('token');
+    if (tokenFromUrl) {
+      localStorage.setItem('token', tokenFromUrl);
+      // URL에서 토큰 파라미터 제거
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [searchParams]);
 
   // 사용자 정보를 가져오는 useEffect
   useEffect(() => {
     const fetchUserInfo = async () => {
       const token = localStorage.getItem('token');
-      if (!token) {          
+      
+      if (!token) {
+        console.log('토큰이 없습니다. 로그인 페이지로 이동합니다.');
         handleTokenExpired();
         return;
       }
 
       try {
+        console.log('사용자 정보를 가져오는 중...', token);
         const response = await fetch('https://api.capdbreak-finance-flow.uk/users/profile', {
           method: 'GET',
           headers: {
@@ -83,14 +91,15 @@ const MainPage = () => {
 
         if (response.ok) {
           const userData = await response.json();
+          console.log('사용자 정보 로드 성공:', userData);
           setUser(userData);
           setEmailOptIn(userData.email_opt_in);
         } else if (response.status === 401) {
-          // 토큰이 만료되었거나 유효하지 않음
+          console.log('토큰이 만료되었습니다.');
           handleTokenExpired();
           return;
         } else {
-          console.error('Failed to fetch user info');
+          console.error('사용자 정보 가져오기 실패:', response.status, response.statusText);
           // API 호출은 실패했지만 기본값으로 설정
           setUser({
             id: 'unknown',
@@ -102,7 +111,7 @@ const MainPage = () => {
           setEmailOptIn(false);
         }
       } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error('사용자 정보 가져오기 중 오류:', error);
         // 네트워크 에러 등의 경우 기본값 설정
         setUser({
           id: 'unknown',
@@ -117,7 +126,10 @@ const MainPage = () => {
       }
     };
 
-    fetchUserInfo();
+    // 컴포넌트가 마운트되고 토큰이 설정된 후에 사용자 정보 가져오기
+    const timeoutId = setTimeout(fetchUserInfo, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
